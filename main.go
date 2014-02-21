@@ -6,42 +6,15 @@ import(
 	"github.com/codegangsta/martini"
 	"fmt"
 	"net/http"
+	"github.com/mrcoleman/go-learning/ldb"
 )
-
-type UserEntity struct {
-	username string
-	password string
-	email string
+func Get_Home(db *sql.DB, r *http.Request, rw http.ResponseWriter){
+	var user = ldb.GetFirstUser(db)
+	fmt.Fprintf(rw,"%s",user.Username)
 }
-
-func SetupDB() *sql.DB{
-	db,err := sql.Open("sqlite3","./temp.db")
-	if(err != nil){
-		panic(err)
-	}
-	return db
-}
-
-func GetFirstUser(db *sql.DB) *UserEntity {
-	rows, err := db.Query("select username, password, email from users;")
-	if(err != nil){
-		panic(err)
-	}
-	defer rows.Close()
-	rows.Next()
-	var username string
-	var password string
-	var email string
-	rows.Scan(&username, &password, &email)
-	return &UserEntity {username, password, email}
-}
-
 func main(){
 	m := martini.Classic()
-	m.Map(SetupDB())
-	m.Get("/",func(db *sql.DB, r *http.Request, rw http.ResponseWriter) {
-		var user = GetFirstUser(db)
-		fmt.Fprintf(rw,"%s",user.username)
-	})
+	m.Map(ldb.SetupDB())
+	m.Get("/",Get_Home)
 	m.Run()
 }
